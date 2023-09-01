@@ -1,169 +1,160 @@
 <template>
-  <div id="app" :class="typeof weather.main != 'undefined' && weather.main.temp > 16 ? 'warm' : ''">
-    <main>
-      <div class="search-box">
-        <input 
-          type="text" 
-          class="search-bar" 
-          placeholder="Search..."
-          v-model="query"
-          @keypress="fetchWeather"
-        />
+  <div id="app">
+    <div :style="pageStyle" class="background-image">
+      <h1 class="app-title">Weather App</h1>
+      <!-- Hide the input container when weatherData is available -->
+      <div v-if="!weatherData" class="input-container">
+        <label for="city">Enter City: </label>
+        <input type="text" v-model="city" id="city" class="city-input">
+        <button @click="getWeather" :style="buttonStyle">Get Weather</button>
       </div>
-
-      <div class="weather-wrap" v-if="typeof weather.main != 'undefined'">
-        <div class="location-box">
-          <div class="location">{{ weather.name }}, {{ weather.sys.country }}</div>
-          <div class="date">{{ dateBuilder() }}</div>
-        </div>
-
-        <div class="weather-box">
-          <div class="temp">{{ Math.round(weather.main.temp) }}°c</div>
-          <div class="weather">{{ weather.weather[0].main }}</div>
-        </div>
+      <div v-if="weatherData" class="weather-info">
+        <h2 class="weather-city">Weather in {{ city }}</h2>
+        <p class="weather-temperature">Temperature: {{ weatherData.main.temp }}°C</p>
+        <p class="weather-description">Weather: {{ weatherData.weather[0].description }}</p>
+        <p class="weather-humidity">Humidity: {{ weatherData.main.humidity }}%</p>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'app',
-  data () {
+  data() {
     return {
-      api_key: 'f6a2c317f97367bfe8fa3e5fc517e80d',
-      url_base: 'https://api.openweathermap.org/data/2.5/',
-      query: '',
-      weather: {}
-    }
+      city: '',
+      apiKey: '1f9abcaa1fb8dc2d0e4b0e6637ddba44', // Replace with your API key
+      weatherData: null,
+      above20ImageUrl: '../src/assets/warm-bg.jpg', // Replace with the URL for above 20°C image
+      below20ImageUrl: '../src/assets/cold-bg.jpg', // Replace with the URL for below 20°C image
+    };
+  },
+  computed: {
+    buttonStyle() {
+      return {
+        backgroundColor: this.weatherData && this.weatherData.main.temp > 20 ? 'blue' : 'orange',
+        color: 'white',
+        border: 'none',
+        padding: '10px 20px',
+        cursor: 'pointer',
+        fontSize: '16px',
+      };
+    },
+    pageStyle() {
+      return {
+        backgroundImage: this.weatherData && this.weatherData.main.temp > 20
+          ? `url('${this.above20ImageUrl}')`
+          : `url('${this.below20ImageUrl}')`,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+        backgroundPosition: 'center center',
+        backgroundColor: this.weatherData && this.weatherData.main.temp > 20 ? '#ff5722' : '#2196F3', // Background color based on temperature
+        boxShadow: '0 0 10px rgba(0, 0, 0, 0.5)', // Adding shadow
+        padding: '20px', // Adding padding
+        minHeight: '100vh',
+        fontFamily: 'Arial, sans-serif',
+        color: '#333',
+        transition: 'background-color 0.5s ease', // Adding background color transition animation
+      };
+    },
   },
   methods: {
-    fetchWeather (e) {
-      if (e.key == "Enter") {
-        fetch(`${this.url_base}weather?q=${this.query}&units=metric&APPID=${this.api_key}`)
-          .then(res => {
-            return res.json();
-          }).then(this.setResults);
+    getWeather() {
+      if (this.city === '') {
+        alert('Please enter a city name.');
+        return;
       }
-    },
-    setResults (results) {
-      this.weather = results;
-    },
-    dateBuilder () {
-      let d = new Date();
-      let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-      let day = days[d.getDay()];
-      let date = d.getDate();
-      let month = months[d.getMonth()];
-      let year = d.getFullYear();
+      const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${this.city}&units=metric&appid=${this.apiKey}`;
 
-      return `${day} ${date} ${month} ${year}`;
-    }
-  }
-}
+      fetch(apiUrl)
+        .then((response) => response.json())
+        .then((data) => {
+          this.weatherData = data;
+        })
+        .catch((error) => {
+          console('Error fetching weather data:', error); // Fixed console.log typo
+        });
+    },
+  },
+};
 </script>
 
-<style>
-* {
+<style scoped>
+/* Rest of the styles remain the same */
+
+/* Add a box shadow to the "Get Weather" button on hover */
+
+*{
+  color:white;
+  padding:5px;
+}
+button:hover {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+}
+.background-image {
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center center;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'montserrat', sans-serif;
-}
-
-#app {
-  background-image: url('./assets/cold-bg.jpg');
-  background-size: cover;
-  background-position: bottom;
-  transition: 0.4s;
-}
-
-#app.warm {
-  background-image: url('./assets/warm-bg.jpg');
-}
-
-main {
   min-height: 100vh;
-  padding: 25px;
-
-  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.75));
+  font-family: Arial, sans-serif;
+  color: #333;
 }
 
-.search-box {
-  width: 100%;
-  margin-bottom: 30px;
-}
-
-.search-box .search-bar {
-  display: block;
-  width: 100%;
-  padding: 15px;
-  
-  color: #313131;
-  font-size: 20px;
-
-  appearance: none;
-  border:none;
-  outline: none;
-  background: none;
-
-  box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.25);
-  background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 0px 16px 0px 16px;
-  transition: 0.4s;
-}
-
-.search-box .search-bar:focus {
-  box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.25);
-  background-color: rgba(255, 255, 255, 0.75);
-  border-radius: 16px 0px 16px 0px;
-}
-
-.location-box .location {
-  color: #FFF;
-  font-size: 32px;
-  font-weight: 500;
-  text-align: center;
-  text-shadow: 1px 3px rgba(0, 0, 0, 0.25);
-}
-
-.location-box .date {
-  color: #FFF;
-  font-size: 20px;
-  font-weight: 300;
-  font-style: italic;
+.app-title {
+  font-size: 24px;
   text-align: center;
 }
 
-.weather-box {
+.input-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.city-input {
+  padding: 5px;
+  font-size: 16px;
+}
+
+.weather-info {
+  margin-top: 20px;
   text-align: center;
+  font-size: 18px;
 }
 
-.weather-box .temp {
-  display: inline-block;
-  padding: 10px 25px;
-  color: #FFF;
-  font-size: 102px;
-  font-weight: 900;
-
-  text-shadow: 3px 6px rgba(0, 0, 0, 0.25);
-  background-color:rgba(255, 255, 255, 0.25);
-  border-radius: 16px;
-  margin: 30px 0px;
-
-  box-shadow: 3px 6px rgba(0, 0, 0, 0.25);
+.weather-city {
+  font-size: 24px;
+  font-weight: bold;
 }
 
-.weather-box .weather {
-  color: #FFF;
-  font-size: 48px;
-  font-weight: 700;
-  font-style: italic;
-  text-shadow: 3px 6px rgba(0, 0, 0, 0.25);
+.weather-temperature {
+  margin-top: 10px;
 }
+
+.weather-description {
+  margin-top: 10px;
+}
+
+.weather-humidity {
+  margin-top: 10px;
+}
+
+/* Style for the "Get Weather" button */
+button {
+  margin-top: 10px;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+  button:hover {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+  }
 </style>
